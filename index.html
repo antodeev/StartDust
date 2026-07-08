@@ -30,9 +30,9 @@
   }
   h1,h2,h3{font-family:'Cormorant Garamond',serif;font-weight:400;}
   ::selection{background:var(--champagne);color:var(--obsidian);}
-
+ 
   a{color:inherit;}
-
+ 
   /* ---------- COUNTER BAR ---------- */
   .counter-bar{
     position:fixed;top:0;left:0;right:0;
@@ -48,7 +48,7 @@
     z-index:100;
   }
   .counter-bar strong{color:var(--champagne-light);font-weight:500;}
-
+ 
   /* ---------- ORNAMENT (signature motif) ---------- */
   .ornament{
     display:flex;
@@ -65,7 +65,7 @@
     border:1px solid var(--champagne);
     transform:rotate(45deg);
   }
-
+ 
   /* ---------- HERO ---------- */
   .hero{
     position:relative;
@@ -147,7 +147,7 @@
     background:linear-gradient(180deg, var(--champagne), transparent);
     margin:10px auto 0;
   }
-
+ 
   /* ---------- SECTION SHARED ---------- */
   section{padding:130px 24px;}
   .section-inner{max-width:1000px;margin:0 auto;}
@@ -167,7 +167,7 @@
     font-size:0.92rem;
     letter-spacing:0.01em;
   }
-
+ 
   /* ---------- COSA E ---------- */
   .what-section{
     background:var(--obsidian);
@@ -198,7 +198,7 @@
     font-weight:400;
   }
   .what-card p{color:var(--stone);font-size:0.88rem;line-height:1.7;}
-
+ 
   /* ---------- FORM ---------- */
   .form-section{background:var(--obsidian);}
   .form-box{
@@ -267,7 +267,7 @@
     font-size:1.3rem;
     padding:30px 0 4px;
   }
-
+ 
   footer{
     text-align:center;
     padding:40px 20px 50px;
@@ -276,7 +276,7 @@
     letter-spacing:0.1em;
     border-top:1px solid var(--hairline);
   }
-
+ 
   /* ---------- TOAST ---------- */
   .toast{
     position:fixed;
@@ -296,7 +296,7 @@
     text-align:center;
   }
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
-
+ 
   @media (max-width:760px){
     .what-grid{grid-template-columns:1fr;}
     .what-card{border-left:none;border-top:1px solid var(--hairline);}
@@ -307,9 +307,9 @@
 </style>
 </head>
 <body>
-
+ 
 <div class="counter-bar" id="counterBar">Già <strong id="counterNum">0</strong> persone interessate</div>
-
+ 
 <!-- HERO -->
 <div class="hero">
   <canvas id="stars"></canvas>
@@ -322,7 +322,7 @@
   </div>
   <div class="scroll-hint">Scopri di più</div>
 </div>
-
+ 
 <!-- COSA E -->
 <section class="what-section">
   <div class="section-inner">
@@ -348,7 +348,7 @@
     </div>
   </div>
 </section>
-
+ 
 <!-- FORM -->
 <section class="form-section" id="form">
   <div class="section-inner">
@@ -356,7 +356,7 @@
     <h2 class="section-title">Sii tra i primi</h2>
     <p class="section-sub">Lascia i tuoi dati: ti scriveremo personalmente quando StarDust sarà disponibile.</p>
     <div class="form-box">
-      <form id="signupForm">
+      <form id="signupForm" action="https://formspree.io/f/xnjkylab" method="POST">
         <div class="field">
           <label for="name">Nome</label>
           <input type="text" id="name" name="name" placeholder="Il tuo nome">
@@ -371,17 +371,17 @@
     </div>
   </div>
 </section>
-
+ 
 <footer>STARDUST — Progetto in fase di test. Nessun ordine reale verrà elaborato.</footer>
-
+ 
 <div class="toast" id="toast"></div>
-
+ 
 <script>
   // ---------- STARFIELD (sparse, slow, elegant) ----------
   const canvas = document.getElementById('stars');
   const ctx = canvas.getContext('2d');
   let stars = [];
-
+ 
   function resizeCanvas(){
     canvas.width = canvas.parentElement.offsetWidth;
     canvas.height = canvas.parentElement.offsetHeight;
@@ -394,7 +394,7 @@
       speed: Math.random() * 0.006 + 0.0015
     }));
   }
-
+ 
   function drawStars(){
     ctx.clearRect(0,0,canvas.width, canvas.height);
     for(const s of stars){
@@ -407,11 +407,11 @@
     }
     requestAnimationFrame(drawStars);
   }
-
+ 
   window.addEventListener('resize', resizeCanvas);
   resizeCanvas();
   drawStars();
-
+ 
   // ---------- TOAST ----------
   const toast = document.getElementById('toast');
   let toastTimer;
@@ -421,7 +421,7 @@
     toast.classList.add('show');
     toastTimer = setTimeout(() => toast.classList.remove('show'), 3200);
   }
-
+ 
   // ---------- COUNTER (localStorage) ----------
   const counterKey = 'starDustCounter';
   function getCounter(){
@@ -432,11 +432,12 @@
     document.getElementById('counterNum').textContent = val;
   }
   setCounter(getCounter());
-
-  // ---------- FORM SUBMIT (no real email sent) ----------
+ 
+  // ---------- FORM SUBMIT (invia davvero a Formspree) ----------
   const form = document.getElementById('signupForm');
   const confirmMsg = document.getElementById('confirmMsg');
-
+  const submitBtn = form.querySelector('.submit-btn');
+ 
   form.addEventListener('submit', function(e){
     e.preventDefault();
     const email = document.getElementById('email').value.trim();
@@ -444,11 +445,34 @@
       showToast('Inserisci un indirizzo email valido.');
       return;
     }
-    setCounter(getCounter() + 1);
-    form.style.display = 'none';
-    confirmMsg.style.display = 'block';
+ 
+    const originalLabel = submitBtn.textContent;
+    submitBtn.textContent = 'Invio in corso...';
+    submitBtn.disabled = true;
+ 
+    fetch(form.action, {
+      method: 'POST',
+      body: new FormData(form),
+      headers: { 'Accept': 'application/json' }
+    })
+    .then(response => {
+      if(response.ok){
+        setCounter(getCounter() + 1);
+        form.style.display = 'none';
+        confirmMsg.style.display = 'block';
+      } else {
+        showToast('Qualcosa è andato storto. Riprova tra poco.');
+        submitBtn.textContent = originalLabel;
+        submitBtn.disabled = false;
+      }
+    })
+    .catch(() => {
+      showToast('Impossibile inviare i dati. Controlla la connessione.');
+      submitBtn.textContent = originalLabel;
+      submitBtn.disabled = false;
+    });
   });
 </script>
-
+ 
 </body>
 </html>
